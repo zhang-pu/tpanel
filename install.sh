@@ -53,12 +53,12 @@ else
     $PKG_MANAGER install -y php php-fpm php-mysql php-mbstring php-xml php-curl php-zip
 fi
 
-if command -v mysql &>/dev/null; then
+if command -v mariadb &>/dev/null; then
     echo "  MySQL 已安装，跳过"
 else
-    $PKG_MANAGER install -y mysql-server
-    systemctl enable mysql
-    systemctl start mysql
+    $PKG_MANAGER install -y mariadb-server
+    systemctl enable mariadb
+    systemctl start mariadb
 fi
 
 # Python3 和 pip
@@ -138,7 +138,7 @@ cat > /etc/systemd/system/tpanel.service << 'EOF'
 [Unit]
 Description=TPanel - Linux Website Management Panel
 Documentation=https://tpanel.cn
-After=network.target mysql.service
+After=network.target mariadb.service
 
 [Service]
 Type=simple
