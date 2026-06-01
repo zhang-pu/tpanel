@@ -37,8 +37,8 @@ else
 fi
 
 echo ""
-echo "==> 1/7 更新软件源..."
-$PKG_MANAGER update -qq
+echo "==> 1/7 更新软件源并升级系统..."
+$PKG_MANAGER update -qq && $PKG_MANAGER upgrade -y
 
 echo "==> 2/7 安装依赖包..."
 if command -v nginx &>/dev/null; then
