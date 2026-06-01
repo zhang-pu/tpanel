@@ -61,10 +61,8 @@ else
     systemctl start mariadb
 fi
 
-# Python3 和 pip
-if ! command -v python3 &>/dev/null; then
-    $PKG_MANAGER install -y python3 python3-pip python3-venv
-fi
+# Python3、pip 和 venv（Debian/Ubuntu 虚拟环境支持）
+$PKG_MANAGER install -y python3 python3-pip python3-venv python3-dev libxml2-dev libxslt1-dev
 
 # certbot
 if ! command -v certbot &>/dev/null; then
