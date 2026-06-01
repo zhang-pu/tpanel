@@ -81,18 +81,61 @@ mkdir -p /opt/tpanel/config
 
 # 复制源码
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TPANEL_PKG="/tmp/tpanel-v1.3.0.zip"
+TPANEL_URL="https://github.com/zhang-pu/tpanel/releases/latest/download/tpanel-v1.3.0.zip"
+
 if [ -f "$SCRIPT_DIR/backend/main.py" ]; then
+    echo "  使用本地源码"
     cp -r "$SCRIPT_DIR/backend" /opt/tpanel/
     cp -r "$SCRIPT_DIR/frontend" /opt/tpanel/
-    cp "$SCRIPT_DIR/requirements.txt" /opt/tpanel/
-    cp "$SCRIPT_DIR/SPEC.md" /opt/tpanel/
+    cp "$SCRIPT_DIR/requirements.txt" /opt/tpanel/ 2>/dev/null || true
+    cp "$SCRIPT_DIR/SPEC.md" /opt/tpanel/ 2>/dev/null || true
     echo "  源码已复制到 /opt/tpanel"
+else
+    echo "  本地源码未找到，从 GitHub 下载..."
+    cd /tmp
+    curl -sL "$TPANEL_URL" -o "$TPANEL_PKG"
+    if [ ! -f "$TPANEL_PKG" ]; then
+        echo "❌ 下载源码失败，请检查网络或手动上传源码"
+        echo "  可以从 https://github.com/zhang-pu/tpanel/releases 下载"
+        exit 1
+    fi
+    echo "  本地源码未找到，从 GitHub 下载..."
+    cd /tmp
+    curl -sL "$TPANEL_URL" -o "$TPANEL_PKG"
+    if [ ! -f "$TPANEL_PKG" ]; then
+        echo "❌ 下载源码失败，请检查网络或手动上传源码"
+        echo "  可以从 https://github.com/zhang-pu/tpanel/releases 下载"
+        exit 1
+    fi
+    unzip -q "$TPANEL_PKG" -d /tmp/
+    rm -f "$TPANEL_PKG"
+    # 找到解压出来的目录
+    TPANEL_SRC=$(find /tmp -maxdepth 1 -name "tpanel*" -type d | head -1)
+    if [ -z "$TPANEL_SRC" ] || [ ! -f "$TPANEL_SRC/requirements.txt" ]; then
+        echo "❌ 解压后未找到 requirements.txt，解压目录: $TPANEL_SRC"
+        ls /tmp/tpanel*/
+        exit 1
+    fi
+    cp -r "$TPANEL_SRC/backend" /opt/tpanel/
+    cp -r "$TPANEL_SRC/frontend" /opt/tpanel/
+    cp "$TPANEL_SRC/requirements.txt" /opt/tpanel/
+    echo "  源码已下载并复制到 /opt/tpanel"
+    rm -rf "$TPANEL_SRC"
 fi
 
 chown -R tpanel:tpanel /opt/tpanel
 
 echo "==> 4/7 安装 Python 依赖..."
 cd /opt/tpanel
+
+# 检查 requirements.txt 是否存在
+if [ ! -f requirements.txt ]; then
+    echo "❌ requirements.txt 未找到，复制失败"
+    ls -la /opt/tpanel/
+    exit 1
+fi
+
 python3 -m venv venv
 source venv/bin/activate
 pip install -q -r requirements.txt
