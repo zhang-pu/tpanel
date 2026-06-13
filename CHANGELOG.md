@@ -356,6 +356,121 @@ v1.3.10 ~ v1.3.13 四轮迭代反复「装机后才发现」—— sandbox 里�
 
 ---
 
+## 📦 v1.3.32 — 2026-06-08 【开发版，未发 release】
+
+### 🐛 修复
+
+- sidebar `!important` 保险（避免主题变量被覆盖）
+- 跟 v1.3.31 配套：v1.3.31 改白色背景 + v1.3.32 加 `!important` 保险
+
+---
+
+## 📦 v1.3.31 — 2026-06-08 【开发版，未发 release】
+
+### 🐛 修复
+
+- 侧边栏改白色背景（CSS 变量方案）
+- 主题适配
+- 配套 v1.3.32 加 `!important` 保险
+
+---
+
+## 📦 v1.3.21 — 2026-06-07 【正式发布】
+
+> **重点**: cron/run 走任务流 + sudo 修整收尾
+
+### 🐛 修复
+
+1. **cron/run 走任务流**（不再阻塞 HTTP）
+2. **run_security_update 第二步 sudo**
+   - `apt-get update` 后需要 sudo 跑第二步
+3. **ssl_manager 写 conf 失败修复**
+4. **certbot 加 sudo**
+   - 之前用裸调 certbot 报权限错
+
+### 交付
+
+- 源码包 83KB（md5=0677c9095b493f6d35acfe6d14fa4022）
+- 文档包 19KB
+
+---
+
+## 📦 v1.3.20 — 2026-06-07 【正式发布】
+
+### 🐛 修复
+
+- `chmod_file` 不接受 `'755'` 字符串
+- 统一 octal 转换（前端 0o755 字符串双兼容）
+
+---
+
+## 📦 v1.3.19 — 2026-06-07 【正式发布】
+
+### 🐛 修复
+
+- `/api/settings` PUT 双重存储 bug
+  - 写 conf 文件，但 `get_panel_domain` 读 sqlite → 配置不生效
+  - 修：统一读 sqlite（conf 改成只读 fallback）
+
+---
+
+## 📦 v1.3.18 — 2026-06-07 【正式发布】
+
+### ✨ 新增
+
+- 新增 `/api/auth/change-password` 端点
+- 前端"修改密码"功能可用
+
+---
+
+## 📦 v1.3.17 — 2026-06-07 【正式发布】
+
+### 🐛 修复
+
+- `backup.lastrowid` 拿不到刚插入的 id
+  - sqlite3 `INSERT ... RETURNING` 不支持
+  - 修：先 `cur.lastrowid`
+- `restore` PermissionError
+- `time` import 缺失
+
+---
+
+## 📦 v1.3.16 — 2026-06-07 【正式发布】
+
+### 🐛 修复
+
+- `fastcgi_pass unix:127.0.0.1:9000` 拼接错语法
+  - 模板 f-string 拼接时把两个地址拼一起
+  - 修：模板改成 `'127.0.0.1:9000'` 直接字符串
+
+---
+
+## 📦 v1.3.15 — 2026-06-07 【正式发布】
+
+### 🐛 修复
+
+- `write_nginx_config` 写 `/etc/nginx` 失败
+  - 路径权限问题，system.py 走 sudo
+- `DEBIAN_FRONTEND` sudo 拒绝
+  - certbot 需要 `DEBIAN_FRONTEND=noninteractive`
+  - sudo 启动时把环境变量吃掉
+  - 修：`sudo -E` 保留环境
+- `sudo bash -c` 嵌套问题
+
+---
+
+## 📦 v1.3.4 — 2026-06-05 【开发版，未发 release】
+
+3 个 install.sh 隐藏 bug（v1.3.8 段详细描述的 1/2/3 项提前修）：
+
+1. **zip 魔数校验**：用 `grep -q "PK\x03\x04"`（grep 文本模式不解析 \x）
+   - 改用 `od -An -tx1 -N4` + hex 字符串比较
+2. **解压漏复制**：只 `cp backend/ frontend/`，没复制根目录的 `requirements.txt`、`.gitignore` 等
+3. **`/etc/nginx/tpanel` 权限**：config.py import 时就 `os.makedirs('/etc/nginx/tpanel')`，tpanel 用户无权限
+   - install.sh 补上 `mkdir -p && chown tpanel:tpanel`
+
+---
+
 ## 📦 v1.3.3 — 2026-06-05 【开发版，未发 release】
 
 小修补。
