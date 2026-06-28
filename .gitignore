@@ -1,0 +1,52 @@
+# 数据库
+*.db
+*.sqlite
+*.sqlite3
+
+# 虚拟环境
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+
+# 日志
+logs/
+*.log
+
+# 备份
+backups/
+*.zip
+*.tar.gz
+*.bak
+*.bak.*
+*.old
+
+# 站点数据
+sites/
+data/
+
+# SSL 证书
+ssl/
+*.pem
+*.crt
+*.key
+
+# 临时文件
+tmp/
+*.tmp
+.DS_Store
+Thumbs.db
+
+# 前端备份
+frontend.bak*
+*.html.bak*
+
+# 后端备份
+backend/*.bak*
+backend/*bak*.py
+
+# 其他
+.well-known/
+vendor/
+node_modules/
