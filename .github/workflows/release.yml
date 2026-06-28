@@ -1,0 +1,39 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create source package
+        run: |
+          zip -r tpanel-${{ github.ref_name }}-source.zip . \
+            -x ".git/*" \
+            -x ".github/*" \
+            -x "venv/*" \
+            -x "sites/*" \
+            -x "logs/*" \
+            -x "backups/*" \
+            -x "data/*" \
+            -x "ssl/*" \
+            -x ".well-known/*" \
+            -x "*.db" \
+            -x "*.sqlite" \
+            -x "*.log" \
+            -x "*.bak"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: TPanel ${{ github.ref_name }}
+          generate_release_notes: true
+          files: tpanel-${{ github.ref_name }}-source.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
