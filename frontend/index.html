@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>T面板 - Linux 网站管理面板</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -2119,7 +2122,7 @@ async function loadSites() {
       <td><span class="badge ${s.ssl_enabled ? 'green' : 'blue'}">${s.ssl_enabled ? '已启用' : '未启用'}</span></td>
       <td>${s.created_at ? s.created_at.split('T')[0] : '-'}</td>
       <td class="actions">
-        <button class="btn-icon" title="备份" onclick="quickBackup(${s.id})">💾</button><button class="btn-icon" title="强制开启 HTTPS" onclick="deploySSL('${s.domain}')">🔐</button>
+        <button class="btn-icon" title="备份" onclick="quickBackup(${s.id})">💾</button>
         <button class="btn-icon danger" title="删除" onclick="deleteSite(${s.id},'${s.domain}')">🗑️</button>
       </td>
     </tr>`).join('');
@@ -2759,27 +2762,11 @@ async function loadLogs() {
 async function changePassword() {
   const cur = document.getElementById('curPass').value;
   const neu = document.getElementById('newPass').value;
-  if (!cur || !cur.trim()) { showAlert('settingsAlert', '请输入当前密码'); return; }
-  if (!neu || neu.length < 8) { showAlert('settingsAlert', '新密码至少6位'); return; }
+  if (!neu || neu.length < 8) { showAlert('settingsAlert', '新密码至少8位'); return; }
   const al = document.getElementById('settingsAlert');
-  al.textContent = '正在修改...';
+  al.textContent = '密码修改功能开发中...';
   al.className = 'alert show success';
-
-  const d = await api('/auth/change-password', {
-    method: 'POST',
-    body: JSON.stringify({ old_password: cur, new_password: neu })
-  });
-
-  if (d.code === 0) {
-    al.textContent = '密码修改成功！下次登录请使用新密码';
-    al.className = 'alert show success';
-    document.getElementById('curPass').value = '';
-    document.getElementById('newPass').value = '';
-  } else {
-    al.textContent = d.msg || '修改失败';
-    al.className = 'alert show error';
-  }
-  setTimeout(() => { al.className = 'alert'; }, 4000);
+  setTimeout(() => { al.className = 'alert'; }, 3000);
 }
 
 async function loadSettingsPage() {
@@ -2887,12 +2874,6 @@ async function loadFileList() {
   });
   document.getElementById('fileBreadcrumb').innerHTML = bread;
 
-  // Sort: folders first, then files, both a-z
-  d.data.sort((a, b) => {
-    if (a.type !== b.type) return a.type === 'dir' ? -1 : 1;
-    return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
-  });
-
   // Render table
   tbody.innerHTML = d.data.map(item => {
     const icon = item.type === 'dir' ? '📁' : getFileIcon(item.name);
@@ -2907,7 +2888,7 @@ async function loadFileList() {
       <td style="font-size:13px;">${item.modified}</td>
       <td><span class="badge" style="font-family:'JetBrains Mono',monospace;">${perms}</span></td>
       <td class="actions">
-        ${item.type === 'file' ? `<button class="btn-icon" onclick="openFileEditor('${item.name}')" title="编辑">✏️</button>` : ''}
+        ${item.type === 'file' ? `<button class="btn-icon" onclick="openFileEditor('${item.name}')" title="编辑">✏️</button><button class="btn-icon" onclick="downloadFile('${item.name}')" title="下载">⬇️</button>` : ''}
         ${isArchive(item.name) ? `<button class="btn-icon" onclick="openExtractDialog('${item.name}')" title="解压">📦</button>` : ''}
         <button class="btn-icon" onclick="openChmodDialog('${item.name}', ${item.permissions})" title="修改权限">🔐</button>
         <button class="btn-icon danger" onclick="deleteFileItem('${item.name}')" title="删除">🗑️</button>
@@ -3504,16 +3485,10 @@ async function loadAdminFiles(path) {
     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-dim);">目录为空</td></tr>';
     return;
   }
-  // Sort: folders first, then files, both a-z
-  d.data.sort((a, b) => {
-    if (a.type !== b.type) return a.type === 'dir' ? -1 : 1;
-    return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
-  });
-
   tbody.innerHTML = d.data.map(f => {
     const icon = f.type === 'dir' ? '📁' : '📄';
     const onclick = f.type === 'dir' ? 'adminNavigateTo(\'' + f.name + '\')' : 'openAdminFile(\'' + f.name + '\')';
-    return '<tr><td><span style="cursor:pointer;' + (f.type === 'dir' ? 'color:var(--green);' : '') + '" onclick="' + onclick + '">' + icon + ' ' + f.name + '</span></td><td>' + f.size_str + '</td><td>' + f.modified + '</td><td><code>' + f.perm_str + '</code></td><td class="actions">' + (f.type !== 'dir' ? '<button class="btn-icon" onclick="openAdminFile(\'' + f.name + '\')">✏️</button>' : '') + (isArchive(f.name) ? '<button class="btn-icon" onclick="openExtractDialog(\'' + f.name + '\', true)" title="解压">📦</button>' : '') + '<button class="btn-icon danger" onclick="deleteAdminFile(\'' + f.name + '\', \'' + f.type + '\')">🗑️</button></td></tr>';
+    return '<tr><td><span style="cursor:pointer;' + (f.type === 'dir' ? 'color:var(--green);' : '') + '" onclick="' + onclick + '">' + icon + ' ' + f.name + '</span></td><td>' + f.size_str + '</td><td>' + f.modified + '</td><td><code>' + f.perm_str + '</code></td><td class="actions">' + (f.type !== 'dir' ? '<button class="btn-icon" onclick="openAdminFile(\'' + f.name + '\')">✏️</button><button class="btn-icon" onclick="downloadFile(\'' + f.name + '\')" title="下载">⬇️</button>' : '') + (isArchive(f.name) ? '<button class="btn-icon" onclick="openExtractDialog(\'' + f.name + '\', true)" title="解压">📦</button>' : '') + '<button class="btn-icon danger" onclick="deleteAdminFile(\'' + f.name + '\', \'' + f.type + '\')">🗑️</button></td></tr>';
   }).join('');
 }
 
@@ -3664,5 +3639,67 @@ async function rollbackTo(backupFile) {
 }
 
 // =====================
+function downloadFile(name) {
+  if (isAdminMode) {
+    const filePath = currentAdminPath.endsWith('/') ? currentAdminPath + name : currentAdminPath + '/' + name;
+    const url = API + "/admin/files/download?path=" + encodeURIComponent(filePath) + "&token=" + encodeURIComponent(token);
+    window.open(url, "_blank");
+    return;
+  }
+  const filePath = currentPath ? currentPath + "/" + name : name;
+  const url = API + "/files/download?site_id=" + currentSiteId + "&path=" + encodeURIComponent(filePath) + "&token=" + encodeURIComponent(token);
+  window.open(url, "_blank");
+}
+
+// 右键菜单（v1.3.43.2 新增）
+let ctxTargetName = "";
+let ctxTargetType = "";
+
+document.addEventListener("contextmenu", function(e) {
+  const tr = e.target.closest("#filesTable tr");
+  if (!tr) return;
+  e.preventDefault();
+  const nameSpan = tr.querySelector("td span:nth-child(2)");
+  if (!nameSpan) return;
+  ctxTargetName = nameSpan.textContent.trim();
+  ctxTargetType = tr.querySelector("td:first-child").textContent.includes("📁") ? "dir" : "file";
+
+  const menu = document.getElementById("fileContextMenu");
+  // 压缩文件才显示解压
+  const isArc = /\.(zip|tar|tar\.gz|tgz|bz2|7z|xz|gz)$/i.test(ctxTargetName);
+  document.getElementById("ctxExtractItem").style.display = (ctxTargetType === "file" && isArc) ? "block" : "none";
+  // 目录不显示下载/编辑
+  ["ctxDownloadItem", "ctxEditItem"].forEach(id => {
+    document.getElementById(id).style.display = ctxTargetType === "file" ? "block" : "none";
+  });
+  menu.style.display = "block";
+  menu.style.left = e.clientX + "px";
+  menu.style.top = e.clientY + "px";
+});
+
+document.addEventListener("click", function(e) {
+  if (!e.target.closest("#fileContextMenu")) {
+    document.getElementById("fileContextMenu").style.display = "none";
+  }
+});
+
+function ctxDownload() { document.getElementById("fileContextMenu").style.display = "none"; downloadFile(ctxTargetName); }
+function ctxEdit() { document.getElementById("fileContextMenu").style.display = "none"; openFileEditor(ctxTargetName); }
+function ctxExtract() { document.getElementById("fileContextMenu").style.display = "none"; openExtractDialog(ctxTargetName); }
+function ctxDelete() { document.getElementById("fileContextMenu").style.display = "none"; deleteFileItem(ctxTargetName); }
 </script>
+<!-- 文件右键菜单 -->
+<div id="fileContextMenu" style="display:none; position:fixed; background:var(--card); border:1px solid var(--border); border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15); padding:4px 0; min-width:140px; z-index:9999;">
+  <div id="ctxDownloadItem" class="ctx-item" onclick="ctxDownload()">⬇️ 下载</div>
+  <div id="ctxEditItem" class="ctx-item" onclick="ctxEdit()">✏️ 编辑</div>
+  <div id="ctxExtractItem" class="ctx-item" style="display:none;" onclick="ctxExtract()">📦 解压</div>
+  <div class="ctx-divider"></div>
+  <div class="ctx-item ctx-danger" onclick="ctxDelete()">🗑️ 删除</div>
+</div>
+<style>
+.ctx-item { padding:8px 16px; cursor:pointer; font-size:14px; color:var(--text); }
+.ctx-item:hover { background:var(--bg-soft); }
+.ctx-item.ctx-danger { color:var(--red); }
+.ctx-divider { height:1px; background:var(--border); margin:4px 0; }
+</style>
 </body></html>

@@ -10,7 +10,7 @@ import sqlite3, json
 from datetime import datetime
 from functools import wraps
 
-from flask import Flask, jsonify, request, session, redirect, Response, send_from_directory
+from flask import Flask, jsonify, request, session, redirect, Response, send_file, send_from_directory
 from flask_cors import CORS
 
 # 导入各模块
@@ -652,6 +652,31 @@ def api_files_delete():
 
     return jsonify({'code': 0 if ok else 400, 'msg': msg})
 
+@app.route('/api/files/download', methods=['GET'])
+@require_auth
+def api_files_download():
+    site_id = request.args.get('site_id')
+    filepath = request.args.get('path', '')
+
+    if not site_id or not filepath:
+        return jsonify({'code': 400, 'msg': '参数不完整'})
+
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.execute("SELECT site_path FROM sites WHERE id = ?", (site_id,))
+    row = cur.fetchone()
+    conn.close()
+    if not row:
+        return jsonify({'code': 404, 'msg': '站点不存在'})
+
+    full_path = os.path.join(row[0], filepath) if filepath else row[0]
+    real_path = os.path.realpath(full_path)
+
+    if not os.path.exists(real_path) or not os.path.isfile(real_path):
+        return jsonify({'code': 404, 'msg': '文件不存在'})
+
+    return send_file(real_path, as_attachment=True, download_name=os.path.basename(real_path))
+
+
 @app.route('/api/files/mkdir', methods=['POST'])
 def api_files_mkdir():
     data = request.json or {}
@@ -820,6 +845,20 @@ def api_admin_files_chmod():
     return jsonify({'code': 0 if ok else 400, 'msg': msg})
 
 # added 2026-06-26: admin mode extract
+@app.route('/api/admin/files/download', methods=['GET'])
+def api_admin_files_download():
+    filepath = request.args.get('path', '')
+    if not filepath:
+        return jsonify({'code': 400, 'msg': '缺少 path 参数'})
+
+    real_path = os.path.realpath(filepath)
+    if not os.path.exists(real_path) or not os.path.isfile(real_path):
+        return jsonify({'code': 404, 'msg': '文件不存在'})
+
+    write_log('file_download', f'管理员下载文件 {real_path}', request.remote_addr)
+    return send_file(real_path, as_attachment=True, download_name=os.path.basename(real_path))
+
+
 @app.route('/api/admin/files/extract', methods=['POST'])
 def api_admin_files_extract():
     data = request.json or {}
@@ -1697,16 +1736,27 @@ def api_delete_backup():
 # 静态文件
 # ==========================
 
+def _no_cache_html(resp):
+    # v1.3.43: 强制 no-cache（index.html 频繁更新，不缓存避免点了 onclick 报 undefined）
+    resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    resp.headers['Pragma'] = 'no-cache'
+    resp.headers['Expires'] = '0'
+    return resp
+
 @app.route('/')
 def serve_index():
-    return app.send_static_file('index.html')
+    return _no_cache_html(app.send_static_file('index.html'))
 
 @app.route('/<path:path>')
 def serve_static(path):
     full = os.path.join(app.static_folder, path)
     if os.path.exists(full) and not os.path.isdir(full):
-        return app.send_static_file(path)
-    return app.send_static_file('index.html')
+        resp = app.send_static_file(path)
+        # 其他静态资源（CSS/JS）仍可短缓存；index.html 单独处理
+        if path == 'index.html':
+            return _no_cache_html(resp)
+        return resp
+    return _no_cache_html(app.send_static_file('index.html'))
 
 # ==========================
 

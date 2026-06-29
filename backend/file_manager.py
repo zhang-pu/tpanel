@@ -99,7 +99,7 @@ def format_permissions(mode):
     chars = ['---', '--x', '-w-', '-wx', 'r--', 'r-x', 'rw-', 'rwx']
     return chars[(mode >> 6) & 7] + chars[(mode >> 3) & 7] + chars[mode & 7]
 
-def read_file(path, max_size=1024 * 1024, admin_mode=False):
+def read_file(path, max_size=50 * 1024 * 1024, admin_mode=False):
     """读取文件内容（限制1MB）
     admin_mode=True：允许读取任意文本文件
     """
